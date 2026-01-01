@@ -86,7 +86,7 @@ export default async function ReviewPage({ searchParams }: { searchParams?: { id
           <p className="mt-6 text-[#3c0ea6]">Please Check for Errors before proceeding to Print / Issue Certificates to all Participants</p>
 
           <div className="mt-6">
-            <button className="bg-green-600 text-white px-6 py-3 rounded">Proceed to Issue Certificate</button>
+            <a href={`/dashboard/upload/issue?id=${id}&name=${encodeURIComponent(name)}&type=${encodeURIComponent(record.type || '')}`} className="inline-block bg-green-600 text-white px-6 py-3 rounded">Proceed to Issue Certificate</a>
           </div>
         </div>
       </main>
