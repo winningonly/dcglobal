@@ -47,7 +47,7 @@ export default function Home() {
 
           {/* CTA Button */}
           <a
-            href="#"
+            href="/login"
             className="cta-button inline-flex items-center gap-3 bg-white text-[#0a0a29] font-semibold px-10 py-4 rounded-full hover:bg-gray-100 text-base"
           >
             Get Certificate
