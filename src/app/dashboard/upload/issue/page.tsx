@@ -91,7 +91,8 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
             </div>
 
             <div className="flex flex-col gap-4">
-              <form method="post" action="/api/issue/email" className="inline-block">
+              <form id="email-form" method="post" action="/api/issue/email" className="inline-block">
+                <input type="hidden" name="id" value={id} />
                 <button type="submit" className="bg-green-600 text-white px-6 py-3 rounded">Email Certificates to Trainees</button>
               </form>
               {/* client-side download button */}
