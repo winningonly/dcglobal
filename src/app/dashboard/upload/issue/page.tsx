@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import DownloadZipButton from "../../../components/DownloadZipButton";
 
 export default async function IssuePage({ searchParams }: { searchParams?: { id?: string; name?: string; type?: string } }) {
   const params = await searchParams;
@@ -90,8 +91,13 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
             </div>
 
             <div className="flex flex-col gap-4">
-              <button className="bg-green-600 text-white px-6 py-3 rounded">Email Certificates to Trainees</button>
-              <button className="bg-green-600 text-white px-6 py-3 rounded">Download Zipped File of Certificates</button>
+              <form method="post" action="/api/issue/email" className="inline-block">
+                <button type="submit" className="bg-green-600 text-white px-6 py-3 rounded">Email Certificates to Trainees</button>
+              </form>
+              {/* client-side download button */}
+              <div>
+                <DownloadZipButton id={id} filename={`certificates-${id}.zip`} />
+              </div>
             </div>
           </div>
 
