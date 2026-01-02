@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
-import DownloadZipButton from "../../../components/DownloadZipButton";
+import DownloadZipButton from "../../../../components/DownloadZipButton";
+import EmailCertificatesButton from "../../../../components/EmailCertificatesButton";
 
 export default async function IssuePage({ searchParams }: { searchParams?: { id?: string; name?: string; type?: string } }) {
   const params = await searchParams;
@@ -91,10 +92,11 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
             </div>
 
             <div className="flex flex-col gap-4">
-              <form id="email-form" method="post" action="/api/issue/email" className="inline-block">
-                <input type="hidden" name="id" value={id} />
-                <button type="submit" className="bg-green-600 text-white px-6 py-3 rounded">Email Certificates to Trainees</button>
-              </form>
+              {/* client-side email button */}
+              {/* @ts-ignore client component in server file */}
+              <div>
+                <EmailCertificatesButton id={id} />
+              </div>
               {/* client-side download button */}
               <div>
                 <DownloadZipButton id={id} filename={`certificates-${id}.zip`} />

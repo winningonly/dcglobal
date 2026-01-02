@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { PassThrough } from "stream";
+import { PassThrough, Readable } from "stream";
 import archiver from "archiver";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
@@ -63,20 +63,20 @@ export async function POST(req: Request) {
     const fullName = getFullName(row);
     try {
       const pdfDoc = await PDFDocument.load(templateBytes);
-      const helv = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
       const pages = pdfDoc.getPages();
       const page = pages[0];
       const { width, height } = page.getSize();
       const fontSize = Math.max(20, Math.min(36, Math.floor(width / 20)));
-      const textWidth = helv.widthOfTextAtSize(fullName, fontSize);
+      const textWidth = timesBold.widthOfTextAtSize(fullName, fontSize);
       const x = (width - textWidth) / 2;
-      const y = height * 0.45;
+      const y = height * 0.51;  // From 0.45 → 0.50
       page.drawText(fullName, {
         x,
         y,
         size: fontSize,
-        font: helv,
-        color: rgb(0, 0, 0),
+        font: timesBold,
+        color: rgb(183/255, 184/255, 240/255),
       });
       const pdfBytes = await pdfDoc.save();
       const safeName = fullName.replace(/[^a-z0-9-_\.]/gi, "_");
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
   // finalize
   archive.finalize().catch((e) => console.error("archive finalize error", e));
 
-  return new Response(zipStream, {
+  return new Response(Readable.toWeb(zipStream) as ReadableStream<Uint8Array>, {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="certificates-${id}.zip"`,
