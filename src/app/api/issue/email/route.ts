@@ -33,20 +33,20 @@ function getEmail(row: Record<string, string>) {
 
 async function generatePdfForName(templateBytes: Uint8Array, name: string) {
   const pdfDoc = await PDFDocument.load(templateBytes);
-  const helv = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
   const pages = pdfDoc.getPages();
   const page = pages[0];
   const { width, height } = page.getSize();
   const fontSize = Math.max(20, Math.min(36, Math.floor(width / 20)));
-  const textWidth = helv.widthOfTextAtSize(name, fontSize);
+  const textWidth = timesBold.widthOfTextAtSize(name, fontSize);
   const x = (width - textWidth) / 2;
-  const y = height * 0.45;
+  const y = height * 0.51;
   page.drawText(name, {
     x,
     y,
     size: fontSize,
-    font: helv,
-    color: rgb(0, 0, 0),
+    font: timesBold,
+    color: rgb(183/255, 184/255, 240/255),
   });
   return pdfDoc.save();
 }

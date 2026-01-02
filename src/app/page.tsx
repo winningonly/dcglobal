@@ -46,13 +46,23 @@ export default function Home() {
           </p>
 
           {/* CTA Button */}
-          <a
-            href="/login"
-            className="cta-button inline-flex items-center gap-3 bg-white text-[#0a0a29] font-semibold px-10 py-4 rounded-full hover:bg-gray-100 text-base"
-          >
-            Get Certificate
-            <ArrowRight className="w-5 h-5" />
-          </a>
+          <div className="flex flex-col items-center gap-4">
+            <a
+              href="/login"
+              className="cta-button inline-flex items-center gap-3 bg-white text-[#0a0a29] font-semibold px-10 py-4 rounded-full hover:bg-gray-100 text-base"
+            >
+              Get Certificate
+              <ArrowRight className="w-5 h-5" />
+            </a>
+
+            <a
+              href="/verify"
+              className="cta-button inline-flex items-center gap-3 bg-white text-[#0a0a29] font-semibold px-10 py-4 rounded-full hover:bg-gray-100 text-base"
+            >
+              Verify Certificate
+              <ArrowRight className="w-5 h-5" />
+            </a>
+          </div>
         </div>
 
         {/* Info Cards Section */}
