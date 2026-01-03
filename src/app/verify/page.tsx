@@ -69,9 +69,7 @@ export default function VerifyPage() {
         {error && <div className="mt-8 text-xl text-red-600">{error}</div>}
 
         {result && (
-          <div
-            className="mt-12 w-full max-w-2xl bg-blue-50 p-8 rounded-lg text-indigo-900"
-          >
+          <div className="mt-12 w-full max-w-2xl bg-blue-50 p-8 rounded-lg text-indigo-900">
             <h2 className="text-3xl font-bold text-purple-800 mb-6">Certificate Details</h2>
             <div className="text-xl space-y-4">
               <div><strong>Name:</strong> {result.name}</div>
@@ -80,6 +78,16 @@ export default function VerifyPage() {
             </div>
           </div>
         )}
+
+        {/* Back to Dashboard Link */}
+        <div className="mt-16 mb-12">
+          <a
+            href="/"
+            className="text-xl text-purple-800 underline hover:text-purple-600 transition-colors"
+          >
+            Click here to return to Dashboard
+          </a>
+        </div>
       </div>
     </div>
   );
