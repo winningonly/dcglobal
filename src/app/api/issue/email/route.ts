@@ -96,6 +96,8 @@ export async function POST(req: Request) {
 
   const results: { to: string; ok: boolean; error?: string }[] = [];
 
+  const { generateUniqueCode, saveCertificate } = await import("../../../lib/certs");
+
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const fullName = getFullName(row);
@@ -106,7 +108,29 @@ export async function POST(req: Request) {
     }
 
     try {
+      const code = await generateUniqueCode();
+
+      // embed name
       const pdfBytes = await generatePdfForName(templateBytes, fullName);
+      // load and draw code at top-right
+      const pdfWithCode = await PDFDocument.load(pdfBytes);
+      const helv = await pdfWithCode.embedFont(StandardFonts.HelveticaBold);
+      const page = pdfWithCode.getPages()[0];
+      const { width, height } = page.getSize();
+      const codeFontSize = 10;
+      const codeWidth = helv.widthOfTextAtSize(code, codeFontSize);
+      const margin = 40;
+      const codeX = width - margin - codeWidth;
+      const codeY = height - margin;
+      page.drawText(code, {
+        x: codeX,
+        y: codeY,
+        size: codeFontSize,
+        font: helv,
+        color: rgb(0, 0, 0),
+      });
+      const finalPdf = await pdfWithCode.save();
+
       const safeName = fullName.replace(/[^a-z0-9-_\.]/gi, "_");
       const filename = `${i + 1}-${safeName}.pdf`;
 
@@ -114,10 +138,21 @@ export async function POST(req: Request) {
         from: SMTP_CONFIG.auth.user,
         to,
         subject: `Your Certificate from DC Certificate Portal`,
-        text: `Dear ${fullName},\n\nPlease find attached your certificate.\n\nBest regards,\nDC Certificate Team`,
+        text: `Dear ${fullName},\n\nPlease find attached your certificate. Your certificate ID is ${code}.\n\nBest regards,\nDC Certificate Team`,
         attachments: [
-          { filename, content: Buffer.from(pdfBytes) },
+          { filename, content: Buffer.from(finalPdf) },
         ],
+      });
+
+      // save certificate record
+      await saveCertificate({
+        code,
+        uploadId: id,
+        name: fullName,
+        email: to,
+        filename,
+        issuedAt: new Date().toISOString(),
+        method: "email",
       });
 
       results.push({ to, ok: true });
