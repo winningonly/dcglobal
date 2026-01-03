@@ -96,7 +96,7 @@ export async function POST(req: Request) {
 
   const results: { to: string; ok: boolean; error?: string }[] = [];
 
-  const { generateUniqueCode, saveCertificate } = await import("../../../lib/certs");
+  const { generateUniqueCode, saveCertificate } = await import("@/lib/certs");
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -114,20 +114,20 @@ export async function POST(req: Request) {
       const pdfBytes = await generatePdfForName(templateBytes, fullName);
       // load and draw code at top-right
       const pdfWithCode = await PDFDocument.load(pdfBytes);
-      const helv = await pdfWithCode.embedFont(StandardFonts.HelveticaBold);
+      const timesBold = await pdfWithCode.embedFont(StandardFonts.TimesRomanBold);
       const page = pdfWithCode.getPages()[0];
       const { width, height } = page.getSize();
-      const codeFontSize = 10;
-      const codeWidth = helv.widthOfTextAtSize(code, codeFontSize);
-      const margin = 40;
+      const codeFontSize = 15;
+      const codeWidth = timesBold.widthOfTextAtSize(code, codeFontSize);
+      const margin = 60;
       const codeX = width - margin - codeWidth;
-      const codeY = height - margin;
+      const codeY = height * 0.88;
       page.drawText(code, {
         x: codeX,
         y: codeY,
         size: codeFontSize,
-        font: helv,
-        color: rgb(0, 0, 0),
+        font: timesBold,
+        color: rgb(183/255, 184/255, 240/255),
       });
       const finalPdf = await pdfWithCode.save();
 

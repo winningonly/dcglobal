@@ -58,7 +58,7 @@ export async function POST(req: Request) {
   }
 
   // generate pdf per trainee and create certificate records
-  const { generateUniqueCode, saveCertificate } = await import("../../../lib/certs");
+  const { generateUniqueCode, saveCertificate } = await import("@/lib/certs");
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -85,17 +85,17 @@ export async function POST(req: Request) {
 
       // generate unique code and draw at top-right
       const code = await generateUniqueCode();
-      const codeFontSize = 10;
+      const codeFontSize = 15;
       const codeWidth = timesBold.widthOfTextAtSize(code, codeFontSize);
-      const margin = 40;
+      const margin = 60;
       const codeX = width - margin - codeWidth;
-      const codeY = height - margin;
+      const codeY = height * 0.88;
       page.drawText(code, {
         x: codeX,
         y: codeY,
         size: codeFontSize,
         font: timesBold,
-        color: rgb(0, 0, 0),
+        color: rgb(183/255, 184/255, 240/255),
       });
 
       const pdfBytes = await pdfDoc.save();
@@ -112,6 +112,8 @@ export async function POST(req: Request) {
         filename,
         issuedAt: new Date().toISOString(),
         method: "download",
+        type,
+        data: row,
       });
     } catch (err) {
       // skip failed row

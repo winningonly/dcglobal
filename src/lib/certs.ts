@@ -2,65 +2,84 @@ import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 
-const CERT_DIR = path.join(process.cwd(), "db");
-const CERT_FILE = path.join(CERT_DIR, "certificates.json");
-
-export type CertificateRecord = {
+export interface CertificateRecord {
   code: string;
   uploadId: string;
   name: string;
   email: string;
   filename: string;
-  issuedAt: string;
-  method: "email" | "download";
-};
-
-async function ensureCertDb() {
-  try {
-    await fs.mkdir(CERT_DIR, { recursive: true });
-    try {
-      await fs.access(CERT_FILE);
-    } catch {
-      await fs.writeFile(CERT_FILE, JSON.stringify([]));
-    }
-  } catch (err) {
-    // ignore
-  }
+  issuedAt: string; // ISO string
+  method?: string;
+  type?: string;
+  courseName?: string;
+  data?: Record<string, string>; // full trainee row
 }
 
-export async function readCertificates(): Promise<CertificateRecord[]> {
-  await ensureCertDb();
-  const txt = await fs.readFile(CERT_FILE, "utf8");
+const DB_FILE = path.join(process.cwd(), "db", "certificates.json");
+
+async function loadAll(): Promise<CertificateRecord[]> {
   try {
-    return JSON.parse(txt || "[]");
-  } catch {
+    const txt = await fs.readFile(DB_FILE, "utf8");
+    return JSON.parse(txt) as CertificateRecord[];
+  } catch (e) {
     return [];
   }
 }
 
-export async function writeCertificates(records: CertificateRecord[]) {
-  await ensureCertDb();
-  await fs.writeFile(CERT_FILE, JSON.stringify(records, null, 2));
+async function saveAll(items: CertificateRecord[]) {
+  await fs.mkdir(path.dirname(DB_FILE), { recursive: true });
+  await fs.writeFile(DB_FILE, JSON.stringify(items, null, 2), "utf8");
 }
 
-export async function saveCertificate(record: CertificateRecord) {
-  const arr = await readCertificates();
-  arr.push(record);
-  await writeCertificates(arr);
+function mapCourseName(type?: string) {
+  const map: Record<string, string> = {
+    "dli-basic": "DLI Basic",
+    "dli-advanced": "DLI Advanced",
+    "discipleship": "Dominion Leadership Institute",
+  };
+  return (type && map[type]) || null;
 }
 
-export function generateCode(): string {
-  const num = crypto.randomInt(0, 100_000_000);
-  return `DC${String(num).padStart(8, "0")}`;
+function courseFromData(data?: Record<string, string>) {
+  if (!data) return null;
+  const candidates = ["Course Name", "Course", "course_name", "course", "courseName"];
+  for (const key of candidates) {
+    const v = (data as any)[key];
+    if (v && typeof v === "string" && v.trim()) {
+      // Normalize common values
+      const lower = v.toLowerCase();
+      if (lower.includes("advanced") && lower.includes("dli")) return "DLI Advanced";
+      if (lower.includes("basic") && lower.includes("dli")) return "DLI Basic";
+      if (lower.includes("domin") || lower.includes("discipleship") || lower.includes("dli")) {
+        // If it already contains DLI but not explicit basic/advanced, prefer the generic name
+        if (lower.includes("basic")) return "DLI Basic";
+        if (lower.includes("advanced")) return "DLI Advanced";
+        return "Dominion Leadership Institute";
+      }
+      return v;
+    }
+  }
+  return null;
+}
+
+export async function saveCertificate(cert: CertificateRecord) {
+  // derive courseName if not set
+  if (!cert.courseName) {
+    cert.courseName = mapCourseName(cert.type) || courseFromData(cert.data) || undefined;
+  }
+
+  const items = await loadAll();
+  items.push(cert);
+  await saveAll(items);
+  return cert;
+}
+
+export async function getCertificateByCode(code: string) {
+  const find = (await loadAll()).find((c) => c.code?.toUpperCase() === code.toString().trim().toUpperCase());
+  return find || null;
 }
 
 export async function generateUniqueCode(): Promise<string> {
-  const existing = await readCertificates();
-  const existingSet = new Set(existing.map((r) => r.code));
-  for (let i = 0; i < 10000; i++) {
-    const c = generateCode();
-    if (!existingSet.has(c)) return c;
-  }
-  // fallback: append timestamp
-  return `DC${Date.now()}`;
+  const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
+  return `DC${randomDigits}`;
 }
