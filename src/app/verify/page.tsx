@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import Link from "next/link";
 
 export default function VerifyPage() {
   const [id, setId] = useState("");
@@ -26,9 +27,10 @@ export default function VerifyPage() {
       } else {
         setNotFound(true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       setError("An error occurred");
-      console.error(err);
+      console.error(msg);
     } finally {
       setLoading(false);
     }
@@ -81,12 +83,12 @@ export default function VerifyPage() {
 
         {/* Back to Dashboard Link */}
         <div className="mt-16 mb-12">
-          <a
+          <Link
             href="/"
             className="text-xl text-purple-800 underline hover:text-purple-600 transition-colors"
           >
             Click here to return to Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>

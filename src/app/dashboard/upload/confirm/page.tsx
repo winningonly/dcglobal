@@ -1,4 +1,8 @@
-export default async function ConfirmPage({ searchParams }: { searchParams?: { type?: string; name?: string } }) {
+export default async function ConfirmPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ type?: string; name?: string }>;
+}) {
   const params = await searchParams;
   const type = params?.type || "dli-basic";
   const name = params?.name || "User";

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-export default function EmailCertificatesButton({ id }: { id: string }) {
+export default function EmailCertificatesButton({ id, rows }: { id?: string; rows: Record<string, string>[] }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -9,10 +9,11 @@ export default function EmailCertificatesButton({ id }: { id: string }) {
     setLoading(true);
     setMessage(null);
     try {
+      const bodyPayload = id ? { id } : { rows };
       const res = await fetch("/api/issue/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify(bodyPayload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -20,8 +21,9 @@ export default function EmailCertificatesButton({ id }: { id: string }) {
       } else {
         setMessage(data?.message || "Emails queued");
       }
-    } catch (err: any) {
-      setMessage(err?.message || "Request failed");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Request failed";
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }

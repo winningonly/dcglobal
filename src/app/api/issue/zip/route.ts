@@ -11,12 +11,16 @@ export async function POST(req: Request) {
 
   const UPLOADS_DIR = path.join(process.cwd(), "db", "uploads");
   const filePath = path.join(UPLOADS_DIR, `${id}.json`);
-  let record: any = null;
+  let record: { data?: Array<Record<string, string>>; type?: string } | null = null;
   try {
     const txt = await fs.readFile(filePath, "utf8");
     record = JSON.parse(txt);
   } catch (err) {
     return new Response(JSON.stringify({ error: "upload not found" }), { status: 404 });
+  }
+
+  if (!record) {
+    return new Response(JSON.stringify({ error: "invalid upload data" }), { status: 400 });
   }
 
   const data: Array<Record<string, string>> = record.data || [];

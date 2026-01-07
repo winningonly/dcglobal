@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: "DC Global Certificate Issuer",
   description: "Empower Your Growth with a Dominion City Certification. Verify Your Achievements. Issue & Receive Digital Certificates with Ease.",
   icons: {
-    icon: "https://ext.same-assets.com/891388946/966609540.png",
-  },
+    icon: "/favicon.png",
+  }
 };
 
 export default function RootLayout({

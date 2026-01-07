@@ -1,0 +1,82 @@
+[project.ts]: detectFrameworks
+[project.ts]: detectBuildSystem
+[project.ts]: detectWorkspaces
+[project.ts]: detectPackageManager
+[project.ts]: detectFrameworksInPath - undefined
+​
+❯ Initial build environment
+config: /home/cash/dcglobal/netlify.toml
+context: dev
+cwd: /home/cash/dcglobal
+featureFlags: []
+mode: cli
+repositoryRoot: /home/cash/dcglobal
+siteId: 06b35acb-0096-4c0b-b4f9-332811753254
+​
+❯ UI build settings
+baseRelDir: true
+build:
+  command: bun run build
+  publish: .next
+functionsDirectory: netlify/functions
+​
+❯ Resolved build environment
+branch: main
+buildDir: /home/cash/dcglobal
+configPath: /home/cash/dcglobal/netlify.toml
+context: dev
+env:
+  - NETLIFY_NEXT_PLUGIN_SKIP
+  - DEPLOY_ID
+  - BUILD_ID
+  - ACCOUNT_ID
+  - REPOSITORY_URL
+  - NETLIFY_LOCAL
+  - HEAD
+  - COMMIT_REF
+  - CACHED_COMMIT_REF
+  - PULL_REQUEST
+  - LANG
+  - LANGUAGE
+  - LC_ALL
+  - GATSBY_TELEMETRY_DISABLED
+  - NEXT_TELEMETRY_DISABLED
+​
+❯ Resolved config
+build:
+  command: bun run build
+  commandOrigin: config
+  environment:
+    - NETLIFY_NEXT_PLUGIN_SKIP
+  publish: /home/cash/dcglobal/.next
+  publishOrigin: config
+functionsDirectory: /home/cash/dcglobal/netlify/functions
+plugins:
+  - inputs: {}
+    origin: config
+    package: "@netlify/plugin-nextjs"
+winston:create-logger: Define prototype method for "error"
+winston:create-logger: Define prototype method for "warn"
+winston:create-logger: Define prototype method for "info"
+winston:create-logger: Define prototype method for "http"
+winston:create-logger: Define prototype method for "verbose"
+winston:create-logger: Define prototype method for "debug"
+winston:create-logger: Define prototype method for "silly"
+winston:create-logger: Define prototype method for "error"
+winston:create-logger: Define prototype method for "warn"
+winston:create-logger: Define prototype method for "info"
+winston:create-logger: Define prototype method for "http"
+winston:create-logger: Define prototype method for "verbose"
+winston:create-logger: Define prototype method for "debug"
+winston:create-logger: Define prototype method for "silly"
+ ›   Warning: TypeError: Cannot read properties of undefined (reading 'prototype')
+ ›       at Object.<anonymous> (/home/cash/.nvm/versions/node/v25.1.0/lib/node_modules/netlify-cli/node_modules/buffer-equal-constant-time/index.js:37:35)
+ ›       at Module._compile (node:internal/modules/cjs/loader:1760:14)
+ ›       at Object..js (node:internal/modules/cjs/loader:1892:10)
+ ›       at Module.load (node:internal/modules/cjs/loader:1480:32)
+ ›       at Module._load (node:internal/modules/cjs/loader:1299:12)
+ ›       at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+ ›       at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+ ›       at Module.require (node:internal/modules/cjs/loader:1503:12)
+ ›       at require (node:internal/modules/helpers:152:16)
+ ›       at Object.<anonymous> (/home/cash/.nvm/versions/node/v25.1.0/lib/node_modules/netlify-cli/node_modules/jwa/index.js:1:19)

@@ -8,7 +8,7 @@ export default function Home() {
       <header className="w-full py-4 px-6 md:px-12">
         <div className="flex items-center gap-3">
           <Image
-            src="https://ext.same-assets.com/891388946/1516515404.png"
+            src="/favicon.png"
             alt="DC Certificates Logo"
             width={44}
             height={44}
@@ -26,7 +26,7 @@ export default function Home() {
           <div className="relative w-full max-w-3xl mb-10 md:mb-14">
             {/* Hero Image - using the original image which already has the gradient and text */}
             <Image
-              src="https://ext.same-assets.com/891388946/371235521.png"
+              src="/cert_woman.png"
               alt="Dominion City Certificate Issuing Portal"
               width={768}
               height={492}
@@ -71,7 +71,7 @@ export default function Home() {
           <div className="info-card rounded-2xl p-8 text-center cursor-pointer">
             <div className="w-14 h-14 mx-auto mb-5">
               <Image
-                src="https://ext.same-assets.com/891388946/3764894079.svg"
+                src="/church_icon.svg"
                 alt="Church icon"
                 width={56}
                 height={56}

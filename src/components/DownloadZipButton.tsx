@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-export default function DownloadZipButton({ id, filename }: { id: string; filename: string }) {
+export default function DownloadZipButton({ id, rows }: { id?: string; rows: Record<string, string>[] }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -9,10 +9,11 @@ export default function DownloadZipButton({ id, filename }: { id: string; filena
     setLoading(true);
     setError(null);
     try {
+      const bodyPayload = id ? { id } : { rows };
       const res = await fetch("/api/issue/zip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify(bodyPayload),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -23,13 +24,14 @@ export default function DownloadZipButton({ id, filename }: { id: string; filena
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename;
+      a.download = `certificates${id ? `-${id}` : ""}.zip`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } catch (err: any) {
-      setError(err?.message || "Download failed");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Download failed";
+      setError(message);
     } finally {
       setLoading(false);
     }

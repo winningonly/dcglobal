@@ -1,0 +1,24 @@
+{
+  "id": "3df837b8-42ea-49d4-8a06-f979cd28a528",
+  "type": "dli-basic",
+  "name": "maridickerman5",
+  "data": [
+    {
+      "Name": "Sophia Okonkwo Cynthia",
+      "Email": "nelsonkuwakwe@gmail.com",
+      "Course Name": "DLI Basic",
+      "Location": "DC Abuja",
+      "Phone": "8234245293",
+      "Date": "05/03/2025"
+    },
+    {
+      "Name": "Michael Adebayo",
+      "Email": "nelsonontop01@gmail.com",
+      "Course Name": "DLI Basic",
+      "Location": "DC Abuja",
+      "Phone": "3453435433",
+      "Date": "05/03/2025"
+    }
+  ],
+  "createdAt": "2026-01-06T14:51:42.017Z"
+}

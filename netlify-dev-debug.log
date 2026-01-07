@@ -1,0 +1,30 @@
+2026-01-04T12:32:44.543Z dev:preAction start
+2026-01-04T12:32:44.545Z dev:init start
+2026-01-04T12:32:51.696Z netlify:init end
+2026-01-04T12:32:51.697Z dev:preAction end
+winston:create-logger: Define prototype method for "error"
+winston:create-logger: Define prototype method for "warn"
+winston:create-logger: Define prototype method for "info"
+winston:create-logger: Define prototype method for "http"
+winston:create-logger: Define prototype method for "verbose"
+winston:create-logger: Define prototype method for "debug"
+winston:create-logger: Define prototype method for "silly"
+winston:create-logger: Define prototype method for "error"
+winston:create-logger: Define prototype method for "warn"
+winston:create-logger: Define prototype method for "info"
+winston:create-logger: Define prototype method for "http"
+winston:create-logger: Define prototype method for "verbose"
+winston:create-logger: Define prototype method for "debug"
+winston:create-logger: Define prototype method for "silly"
+2026-01-04T12:32:53.629Z netlify:onEnd Command: dev. Status: error. Duration: 9084ms
+ ›   Warning: TypeError: Cannot read properties of undefined (reading 'prototype')
+ ›       at Object.<anonymous> (/home/cash/.nvm/versions/node/v25.1.0/lib/node_modules/netlify-cli/node_modules/buffer-equal-constant-time/index.js:37:35)
+ ›       at Module._compile (node:internal/modules/cjs/loader:1760:14)
+ ›       at Object..js (node:internal/modules/cjs/loader:1892:10)
+ ›       at Module.load (node:internal/modules/cjs/loader:1480:32)
+ ›       at Module._load (node:internal/modules/cjs/loader:1299:12)
+ ›       at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+ ›       at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+ ›       at Module.require (node:internal/modules/cjs/loader:1503:12)
+ ›       at require (node:internal/modules/helpers:152:16)
+ ›       at Object.<anonymous> (/home/cash/.nvm/versions/node/v25.1.0/lib/node_modules/netlify-cli/node_modules/jwa/index.js:1:19)

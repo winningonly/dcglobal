@@ -51,6 +51,11 @@ async function generatePdfForName(templateBytes: Uint8Array, name: string) {
   return pdfDoc.save();
 }
 
+interface UploadRecord {
+  data?: Array<Record<string, string>>;
+  type?: string;
+}
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const id = body?.id;
@@ -58,13 +63,17 @@ export async function POST(req: Request) {
 
   const UPLOADS_DIR = path.join(process.cwd(), "db", "uploads");
   const filePath = path.join(UPLOADS_DIR, `${id}.json`);
-  let record: any = null;
+  let record: UploadRecord | null = null;
   try {
     const txt = await fs.readFile(filePath, "utf8");
     record = JSON.parse(txt);
-  } catch (err) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("failed reading upload file", msg);
     return NextResponse.json({ error: "upload not found" }, { status: 404 });
   }
+
+  if (!record) return NextResponse.json({ error: "invalid upload data" }, { status: 400 });
 
   const data: Array<Record<string, string>> = record.data || [];
   const type: string = record.type || "dli-basic";
@@ -80,7 +89,7 @@ export async function POST(req: Request) {
   let templateBytes: Uint8Array;
   try {
     templateBytes = await fs.readFile(templatePath);
-  } catch (err) {
+  } catch (err: unknown) {
     return NextResponse.json({ error: "template not found" }, { status: 500 });
   }
 
@@ -90,8 +99,9 @@ export async function POST(req: Request) {
   // verify transporter before sending
   try {
     await transporter.verify();
-  } catch (err: any) {
-    return NextResponse.json({ error: `SMTP connection failed: ${err?.message || err}` }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `SMTP connection failed: ${msg}` }, { status: 500 });
   }
 
   const results: { to: string; ok: boolean; error?: string }[] = [];
@@ -156,8 +166,10 @@ export async function POST(req: Request) {
       });
 
       results.push({ to, ok: true });
-    } catch (err: any) {
-      results.push({ to, ok: false, error: err?.message || String(err) });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("failed sending email", msg);
+      results.push({ to, ok: false, error: msg });
     }
   }
 

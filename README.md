@@ -34,3 +34,31 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+---
+
+## Database migration
+
+This project now uses SQLite (via `better-sqlite3`) to store certificates and users in `db/dc.sqlite` instead of JSON files.
+
+- Install the new dependency: `npm install` (or `pnpm`/`yarn`)
+- Run the migration to import existing JSON data: `npm run migrate`
+
+After migration, the app will read certificates and users from the database. Uploads continue to be stored under `db/uploads`.
+
+### Adding users
+
+Only users present in the database can log in. To add a new user, use the CLI helper:
+
+```bash
+npm run add-user -- --email admin@example.com --password "s3cr3t" --name "Admin User"
+```
+
+To overwrite an existing user's password, add `--force`:
+
+```bash
+npm run add-user -- --email admin@example.com --password "newpass" --force
+```
+
+If you'd like an HTTP admin API to add users or a small admin UI, tell me and I can add one.
+

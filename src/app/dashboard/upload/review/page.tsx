@@ -1,9 +1,14 @@
 import fs from "fs/promises";
 import path from "path";
+import Link from "next/link";
 
 type Row = Record<string, string>;
 
-export default async function ReviewPage({ searchParams }: { searchParams?: { id?: string; name?: string } }) {
+export default async function ReviewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ id?: string; name?: string }>;
+}) {
   const params = await searchParams;
   const id = params?.id;
   const name = params?.name || "User";
@@ -15,7 +20,7 @@ export default async function ReviewPage({ searchParams }: { searchParams?: { id
           <h1 className="text-3xl font-bold">No upload found</h1>
           <p className="mt-4">No upload id provided.</p>
           <div className="mt-8">
-            <a href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</a>
+            <Link href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</Link>
           </div>
         </div>
       </div>
@@ -39,7 +44,7 @@ export default async function ReviewPage({ searchParams }: { searchParams?: { id
           <h1 className="text-3xl font-bold">Upload not found</h1>
           <p className="mt-4">We couldn't find the uploaded data.</p>
           <div className="mt-8">
-            <a href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</a>
+            <Link href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</Link>
           </div>
         </div>
       </div>
@@ -53,8 +58,8 @@ export default async function ReviewPage({ searchParams }: { searchParams?: { id
     <div className="min-h-screen bg-[#3c0ea6] text-white flex flex-col">
       <header className="flex justify-end p-8">
         <nav className="space-x-8">
-          <a href="/" className="text-white hover:text-white/80 transition">Home</a>
-          <a href="/dashboard" className="text-white hover:text-white/80 transition">Dashboard</a>
+          <Link href="/" className="text-white hover:text-white/80 transition">Home</Link>
+          <Link href="/dashboard" className="text-white hover:text-white/80 transition">Dashboard</Link>
         </nav>
       </header>
 
@@ -86,13 +91,18 @@ export default async function ReviewPage({ searchParams }: { searchParams?: { id
           <p className="mt-6 text-[#3c0ea6]">Please Check for Errors before proceeding to Print / Issue Certificates to all Participants</p>
 
           <div className="mt-6">
-            <a href={`/dashboard/upload/issue?id=${id}&name=${encodeURIComponent(name)}&type=${encodeURIComponent(record.type || '')}`} className="inline-block bg-green-600 text-white px-6 py-3 rounded">Proceed to Issue Certificate</a>
+            <Link
+              href={`/dashboard/upload/issue?id=${id}&name=${encodeURIComponent(name)}&type=${encodeURIComponent(record.type || '')}`}
+              className="inline-block bg-green-600 text-white px-6 py-3 rounded"
+            >
+              Proceed to Issue Certificate
+            </Link>
           </div>
         </div>
       </main>
 
       <footer className="p-8 text-center">
-        <a href="/" className="text-white text-lg hover:text-white/80 transition">Logout</a>
+        <Link href="/" className="text-white text-lg hover:text-white/80 transition">Logout</Link>
       </footer>
     </div>
   );

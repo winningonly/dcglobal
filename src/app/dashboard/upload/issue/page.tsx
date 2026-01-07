@@ -2,8 +2,13 @@ import fs from "fs/promises";
 import path from "path";
 import DownloadZipButton from "../../../../components/DownloadZipButton";
 import EmailCertificatesButton from "../../../../components/EmailCertificatesButton";
+import Link from "next/link";
 
-export default async function IssuePage({ searchParams }: { searchParams?: { id?: string; name?: string; type?: string } }) {
+export default async function IssuePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ id?: string; name?: string; type?: string }>;
+}) {
   const params = await searchParams;
   const id = params?.id;
   const name = params?.name || "User";
@@ -16,7 +21,7 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
           <h1 className="text-3xl font-bold">Upload not found</h1>
           <p className="mt-4">No upload id provided.</p>
           <div className="mt-8">
-            <a href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</a>
+            <Link href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</Link>
           </div>
         </div>
       </div>
@@ -25,11 +30,11 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
 
   const UPLOADS_DIR = path.join(process.cwd(), "db", "uploads");
   const filePath = path.join(UPLOADS_DIR, `${id}.json`);
-  let record: any = null;
+  let record: { data?: Record<string, string>[]; type?: string } | null = null;
   try {
     const txt = await fs.readFile(filePath, "utf8");
     record = JSON.parse(txt);
-  } catch (err) {
+  } catch (err: unknown) {
     record = null;
   }
 
@@ -40,7 +45,7 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
           <h1 className="text-3xl font-bold">Upload not found</h1>
           <p className="mt-4">We couldn't find the uploaded data.</p>
           <div className="mt-8">
-            <a href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</a>
+            <Link href="/dashboard" className="text-sm text-[#3c0ea6]">Back to dashboard</Link>
           </div>
         </div>
       </div>
@@ -55,8 +60,8 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
   const locKeys = ["Location", "location", "City", "city", "Venue", "venue"];
   let location = "";
   for (const k of locKeys) {
-    if (first[k]) {
-      location = first[k];
+    if ((first as Record<string, string>)[k]) {
+      location = (first as Record<string, string>)[k];
       break;
     }
   }
@@ -72,8 +77,8 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
     <div className="min-h-screen bg-[#3c0ea6] text-white flex flex-col">
       <header className="flex justify-end p-8">
         <nav className="space-x-8">
-          <a href="/" className="text-white hover:text-white/80 transition">Home</a>
-          <a href="/dashboard" className="text-white hover:text-white/80 transition">Dashboard</a>
+          <Link href="/" className="text-white hover:text-white/80 transition">Home</Link>
+          <Link href="/dashboard" className="text-white hover:text-white/80 transition">Dashboard</Link>
         </nav>
       </header>
 
@@ -93,25 +98,28 @@ export default async function IssuePage({ searchParams }: { searchParams?: { id?
 
             <div className="flex flex-col gap-4">
               {/* client-side email button */}
-              {/* @ts-ignore client component in server file */}
               <div>
-                <EmailCertificatesButton id={id} />
+                <EmailCertificatesButton id={id} rows={data} />
               </div>
               {/* client-side download button */}
               <div>
-                <DownloadZipButton id={id} filename={`certificates-${id}.zip`} />
+                <DownloadZipButton id={id} rows={data} />
               </div>
             </div>
           </div>
 
-          <p className="mt-8">Thank you for using this Service. <a href="/dashboard" className="underline text-[#3c0ea6]">Click Here to Return to Dashboard</a></p>
+          <p className="mt-8">Thank you for using this Service. <Link href="/dashboard" className="underline text-[#3c0ea6]">Click Here to Return to Dashboard</Link></p>
 
         </div>
       </main>
 
       <footer className="p-8 text-center">
-        <a href="/" className="text-white text-lg hover:text-white/80 transition">Logout</a>
+        <Link href="/" className="text-white text-lg hover:text-white/80 transition">Logout</Link>
       </footer>
     </div>
   );
+}
+
+function SomeUploader({ rows }: { rows: Record<string, string>[] }) {
+  // ...
 }

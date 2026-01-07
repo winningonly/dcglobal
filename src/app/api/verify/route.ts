@@ -31,8 +31,9 @@ export async function POST(req: Request) {
   let courseName = record.courseName || mapCourseName(record.type);
   if (!courseName && record.data) {
     const candidates = ["Course Name", "Course", "course_name", "course", "courseName"];
+    const data = record.data as Record<string, string>;
     for (const key of candidates) {
-      const v = (record.data as any)[key];
+      const v = data[key];
       if (v && typeof v === "string" && v.trim()) {
         courseName = v;
         break;
