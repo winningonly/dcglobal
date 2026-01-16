@@ -1,14 +1,7 @@
 #!/usr/bin/env node
-const path = require('path');
-const fs = require('fs');
-let Database;
-try {
-  Database = require('better-sqlite3');
-} catch (e) {
-  console.error('Missing dependency better-sqlite3. Run `npm install` and try again.');
-  process.exit(1);
-}
+const { createClient } = require("@supabase/supabase-js");
 const crypto = require('crypto');
+require('dotenv').config();
 
 function usage() {
   console.log('Usage: node scripts/create-user.js --email user@example.com --password s3cr3t [--name "Full Name"] [--force]');
@@ -35,42 +28,64 @@ const force = !!args.force;
 
 if (!email || !password) usage();
 
-const DB_PATH = path.join(process.cwd(), 'db', 'dc.sqlite');
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-const db = new Database(DB_PATH);
-
-// ensure table exists
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY,
-    email TEXT UNIQUE,
-    name TEXT,
-    salt TEXT,
-    hash TEXT
-  );
-`);
-
-const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-if (existing && !force) {
-  console.error(`User with email ${email} already exists. Use --force to overwrite.`);
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("Missing SUPABASE_URL or SUPABASE_KEY environment variables");
   process.exit(1);
 }
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function hashPassword(password, salt) {
   const derived = crypto.scryptSync(password, salt, 64);
   return derived.toString('hex');
 }
 
-const salt = crypto.randomBytes(16).toString('hex');
-const hash = hashPassword(password, salt);
+async function main() {
+  try {
+    // Check if user exists
+    const { data: existing, error: selErr } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle();
 
-if (existing && force) {
-  const info = db.prepare('UPDATE users SET name = ?, salt = ?, hash = ? WHERE email = ?').run(name, salt, hash, email);
-  console.log('Updated user:', email);
-} else {
-  const info = db.prepare('INSERT INTO users (email, name, salt, hash) VALUES (?, ?, ?, ?)').run(email, name, salt, hash);
-  console.log('Created user:', email);
+    if (selErr) throw selErr;
+
+    if (existing && !force) {
+      console.error(`User with email ${email} already exists. Use --force to overwrite.`);
+      process.exit(1);
+    }
+
+    // Generate salt and hash
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = hashPassword(password, salt);
+
+    if (existing && force) {
+      // Update existing user
+      const { error: updateErr } = await supabase
+        .from("users")
+        .update({ name, salt, hash })
+        .eq("email", email);
+
+      if (updateErr) throw updateErr;
+      console.log('Updated user:', email);
+    } else {
+      // Create new user
+      const { data, error: insertErr } = await supabase
+        .from("users")
+        .insert([{ email, name, salt, hash }])
+        .select()
+        .maybeSingle();
+
+      if (insertErr) throw insertErr;
+      console.log('Created user:', email);
+    }
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 }
 
-process.exit(0);
+main();

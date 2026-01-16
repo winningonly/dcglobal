@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import Link from "next/link";
+import { readUploadRecord } from "@/lib/uploads";
 
 type Row = Record<string, string>;
 
@@ -27,15 +28,8 @@ export default async function ReviewPage({
     );
   }
 
-  const UPLOADS_DIR = path.join(process.cwd(), "db", "uploads");
-  const filePath = path.join(UPLOADS_DIR, `${id}.json`);
-  let record: { data: Row[]; type?: string } | null = null;
-  try {
-    const txt = await fs.readFile(filePath, "utf8");
-    record = JSON.parse(txt);
-  } catch (err) {
-    record = null;
-  }
+  // replace manual fs.readFile logic with:
+  const record = (await readUploadRecord(id)) as { data: Row[]; type?: string } | null;
 
   if (!record) {
     return (

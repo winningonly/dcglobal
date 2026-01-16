@@ -1,108 +1,121 @@
-import crypto from "crypto";
-import { db } from "./db";
+import { supabase } from "./supabase";
+import { promises as fs } from "fs";
+import path from "path";
 
-export interface CertificateRecord {
-  code: string;
-  uploadId: string;
+export type CertificateRecord = {
   name: string;
-  email: string;
-  filename: string;
-  issuedAt: string; // ISO string
-  method?: string;
-  type?: string;
-  courseName?: string;
-  data?: Record<string, string>; // full trainee row
-}
-
-// Define the raw row type as returned by better-sqlite3
-interface DbCertificateRow {
-  id: number;
-  code: string;
-  uploadId: string;
-  name: string;
-  email: string;
-  filename: string;
-  issuedAt: string;
-  method: string | null;
-  type: string | null;
+  type: string;
+  data: boolean;
   courseName: string | null;
-  data: string | null;
-}
+  issuedAt: string;
+  id?: number;
+  code: string;
+  // add other certificate fields here (issuer, name, etc.)
+  created_at?: string;
+};
 
-function mapCourseName(type?: string) {
-  const map: Record<string, string> = {
-    "dli-basic": "DLI Basic",
-    "dli-advanced": "DLI Advanced",
-    "discipleship": "Dominion Leadership Institute",
-  };
-  return (type && map[type]) || null;
-}
+export async function upsertCertificate(c: CertificateRecord) {
+  const payload = { ...c, code: c.code.toUpperCase() };
+  try {
+    const { data, error } = await supabase
+      .from("certificates")
+      .upsert([payload], { onConflict: "code" })
+      .select()
+      .maybeSingle();
 
-function courseFromData(data?: Record<string, string> | null) {
-  if (!data) return null;
-  const candidates = ["Course Name", "Course", "course_name", "course", "courseName"];
-  for (const key of candidates) {
-    const v = data[key as keyof Record<string, string>] as string | undefined;
-    if (v && typeof v === "string" && v.trim()) {
-      const lower = v.toLowerCase();
-      if (lower.includes("advanced") && lower.includes("dli")) return "DLI Advanced";
-      if (lower.includes("basic") && lower.includes("dli")) return "DLI Basic";
-      if (lower.includes("domin") || lower.includes("discipleship") || lower.includes("dli")) {
-        if (lower.includes("basic")) return "DLI Basic";
-        if (lower.includes("advanced")) return "DLI Advanced";
-        return "Dominion Leadership Institute";
+    if (error) throw error;
+    return data;
+  } catch (err: unknown) {
+    // If Supabase complains about missing columns (schema mismatch), try snake_case keys
+    try {
+      const errorObj = err as { code?: string; message?: string };
+      const code = errorObj.code ?? "";
+      const msg = String(errorObj.message || "");
+
+      if (code === "PGRST204" || /Could not find the '.*' column/.test(msg)) {
+        const snakePayload: Record<string, unknown> = {};
+        for (const k of Object.keys(payload)) {
+          const snake = k.replace(/([A-Z])/g, (m) => `_${m.toLowerCase()}`);
+          snakePayload[snake] = payload[k as keyof typeof payload];
+        }
+
+        try {
+          const { data: data2, error: error2 } = await supabase
+            .from("certificates")
+            .upsert([snakePayload], { onConflict: "code" })
+            .select()
+            .maybeSingle();
+
+          if (!error2) return data2 as CertificateRecord;
+        } catch {
+          // fall through to local fallback
+        }
       }
-      return v;
+    } catch {
+      // ignore probing errors and continue to local fallback
+    }
+
+    // fallback to local file storage in db/certificates.json
+    try {
+      const file = path.join(process.cwd(), "db", "certificates.json");
+      await fs.mkdir(path.dirname(file), { recursive: true }).catch(() => {});
+      const contents = await fs.readFile(file, "utf-8").catch(() => "[]");
+      const arr: CertificateRecord[] = JSON.parse(contents || "[]");
+      const idx = arr.findIndex((x) => x.code && x.code.toUpperCase() === payload.code);
+      if (idx >= 0) {
+        arr[idx] = { ...arr[idx], ...payload };
+      } else {
+        arr.push(payload as CertificateRecord);
+      }
+      await fs.writeFile(file, JSON.stringify(arr, null, 2), "utf-8");
+      return payload as CertificateRecord;
+    } catch (e: unknown) {
+      // if local fallback fails for any reason, log both errors and return payload
+      try {
+        console.error("upsertCertificate: supabase error", err);
+        console.error("upsertCertificate: local fallback error", e);
+      } catch {
+        // ignore logging errors
+      }
+      return payload as CertificateRecord;
     }
   }
-  return null;
 }
 
-export async function saveCertificate(cert: CertificateRecord) {
-  // derive courseName if not set
-  if (!cert.courseName) {
-    cert.courseName = mapCourseName(cert.type) || courseFromData(cert.data) || undefined;
+export async function findCertificateByCode(code: string) {
+  try {
+    const { data, error } = await supabase
+      .from("certificates")
+      .select("*")
+      .eq("code", code.toUpperCase())
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data) return data as CertificateRecord;
+  } catch {
+    console.log("Supabase lookup failed, falling back to local storage");
   }
 
-  // insert into sqlite
-  const stmt = db.prepare(`INSERT OR REPLACE INTO certificates
-    (code, uploadId, name, email, filename, issuedAt, method, type, courseName, data)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-
-  stmt.run(
-    cert.code,
-    cert.uploadId,
-    cert.name,
-    cert.email,
-    cert.filename,
-    cert.issuedAt,
-    cert.method || null,
-    cert.type || null,
-    cert.courseName || null,
-    cert.data ? JSON.stringify(cert.data) : null
-  );
-
-  return cert;
+  // local fallback
+  try {
+    const file = path.join(process.cwd(), "db", "certificates.json");
+    const contents = await fs.readFile(file, "utf-8").catch(() => "[]");
+    const arr: CertificateRecord[] = JSON.parse(contents || "[]");
+    const found = arr.find((x) => x.code && x.code.toUpperCase() === code.toUpperCase());
+    return found ?? null;
+  } catch {
+    return null;
+  }
 }
 
-export async function getCertificateByCode(code: string) {
-  const row = db.prepare(`SELECT * FROM certificates WHERE UPPER(code)=?`)
-    .get(code.toString().trim().toUpperCase()) as DbCertificateRow | undefined;
+export async function certificateExists(code: string) {
+  const { error, count } = await supabase
+    .from("certificates")
+    .select("id", { head: true, count: "exact" })
+    .eq("code", code.toUpperCase());
 
-  if (!row) return null;
-
-  return {
-    code: row.code,
-    uploadId: row.uploadId,
-    name: row.name,
-    email: row.email,
-    filename: row.filename,
-    issuedAt: row.issuedAt,
-    method: row.method ?? undefined,
-    type: row.type ?? undefined,
-    courseName: row.courseName ?? undefined,
-    data: row.data ? JSON.parse(row.data) : undefined,
-  } as CertificateRecord;
+  if (error) throw error;
+  return (count ?? 0) > 0;
 }
 
 export async function generateUniqueCode(): Promise<string> {
@@ -110,7 +123,7 @@ export async function generateUniqueCode(): Promise<string> {
   while (true) {
     const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
     const code = `DC${randomDigits}`;
-    const exists = db.prepare(`SELECT 1 FROM certificates WHERE code = ?`).get(code);
+    const exists = await certificateExists(code);
     if (!exists) return code;
   }
 }

@@ -3,24 +3,35 @@ import path from "path";
 import { PassThrough, Readable } from "stream";
 import archiver from "archiver";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { readUploadRecord, Row } from "@/lib/uploads";
+import { CertificateRecord } from "@/lib/certs";
+import { upsertTrainee } from "@/lib/trainees";
+
+// Define the shape expected by upsertCertificate
+interface CertificateInput {
+  code: string;
+  name: string;
+  type: string;
+  data: Row;
+  courseName: string | null;
+  issuedAt: string;
+}
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const id = body?.id;
-  if (!id) return new Response(JSON.stringify({ error: "id required" }), { status: 400 });
-
-  const UPLOADS_DIR = path.join(process.cwd(), "db", "uploads");
-  const filePath = path.join(UPLOADS_DIR, `${id}.json`);
-  let record: { data?: Array<Record<string, string>>; type?: string } | null = null;
-  try {
-    const txt = await fs.readFile(filePath, "utf8");
-    record = JSON.parse(txt);
-  } catch (err) {
-    return new Response(JSON.stringify({ error: "upload not found" }), { status: 404 });
+  if (!id) {
+    return new Response(JSON.stringify({ error: "id required" }), { status: 400 });
   }
 
+  const record = (await readUploadRecord(id)) as
+    | { data: Row[]; type?: string }
+    | null;
+
   if (!record) {
-    return new Response(JSON.stringify({ error: "invalid upload data" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "upload not found" }), {
+      status: 404,
+    });
   }
 
   const data: Array<Record<string, string>> = record.data || [];
@@ -37,8 +48,10 @@ export async function POST(req: Request) {
   let templateBytes: Uint8Array;
   try {
     templateBytes = await fs.readFile(templatePath);
-  } catch (err) {
-    return new Response(JSON.stringify({ error: "template not found" }), { status: 500 });
+  } catch {
+    return new Response(JSON.stringify({ error: "template not found" }), {
+      status: 500,
+    });
   }
 
   // create zip stream
@@ -47,13 +60,22 @@ export async function POST(req: Request) {
   archive.pipe(zipStream);
 
   // helper to get full name
-  function getFullName(row: Record<string, string>) {
-    const candidates = ["Full Name", "FullName", "Name", "name", "full_name", "first_name", "firstname"];
+  function getFullName(row: Record<string, string>): string {
+    const candidates = [
+      "Full Name",
+      "FullName",
+      "Name",
+      "name",
+      "full_name",
+      "first_name",
+      "firstname",
+    ];
     for (const key of candidates) {
       if (row[key]) return row[key];
     }
     // try first/last
-    const first = row["First Name"] || row["first_name"] || row["first"] || "";
+    const first =
+      row["First Name"] || row["first_name"] || row["first"] || "";
     const last = row["Last Name"] || row["last_name"] || row["last"] || "";
     const combined = `${first} ${last}`.trim();
     if (combined) return combined;
@@ -62,11 +84,12 @@ export async function POST(req: Request) {
   }
 
   // generate pdf per trainee and create certificate records
-  const { generateUniqueCode, saveCertificate } = await import("@/lib/certs");
+  const { generateUniqueCode, upsertCertificate } = await import("@/lib/certs");
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
     const fullName = getFullName(row);
+
     try {
       const pdfDoc = await PDFDocument.load(templateBytes);
       const timesBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
@@ -78,13 +101,13 @@ export async function POST(req: Request) {
       const fontSize = Math.max(20, Math.min(36, Math.floor(width / 20)));
       const textWidth = timesBold.widthOfTextAtSize(fullName, fontSize);
       const x = (width - textWidth) / 2;
-      const y = height * 0.51;  // From 0.45 → 0.50
+      const y = height * 0.51;
       page.drawText(fullName, {
         x,
         y,
         size: fontSize,
         font: timesBold,
-        color: rgb(183/255, 184/255, 240/255),
+        color: rgb(183 / 255, 184 / 255, 240 / 255),
       });
 
       // generate unique code and draw at top-right
@@ -99,33 +122,54 @@ export async function POST(req: Request) {
         y: codeY,
         size: codeFontSize,
         font: timesBold,
-        color: rgb(183/255, 184/255, 240/255),
+        color: rgb(183 / 255, 184 / 255, 240 / 255),
       });
 
       const pdfBytes = await pdfDoc.save();
+
+      // persist certificate record (best-effort)
+      try {
+        const issuedAt = new Date().toISOString();
+        const courseNameVal = row["Course"] || row["course"] || null;
+        const certData: CertificateInput = {
+          code,
+          name: fullName,
+          type,
+          data: row,
+          courseName: courseNameVal,
+          issuedAt,
+        };
+
+        await upsertCertificate(certData as unknown as CertificateRecord);
+
+        // persist trainee details (best-effort)
+        try {
+          await upsertTrainee({
+            name: fullName,
+            email: row["Email"] || row["email"] || null,
+            courseName: courseNameVal,
+            location: row["Location"] || row["location"] || null,
+            phone: row["Phone"] || row["phone"] || null,
+            date: issuedAt,
+            dc_id: code,
+          });
+        } catch (e) {
+          console.error("Failed saving trainee record", fullName, e);
+        }
+      } catch (err) {
+        console.error("Failed saving certificate record", fullName, err);
+      }
+
       const safeName = fullName.replace(/[^a-z0-9-_\.]/gi, "_");
       const filename = `${i + 1}-${safeName}.pdf`;
       archive.append(Buffer.from(pdfBytes), { name: filename });
-
-      // save certificate record
-      await saveCertificate({
-        code,
-        uploadId: id,
-        name: fullName,
-        email: row["Email"] || row["email"] || "",
-        filename,
-        issuedAt: new Date().toISOString(),
-        method: "download",
-        type,
-        data: row,
-      });
     } catch (err) {
-      // skip failed row
       console.error("Failed to create PDF for", fullName, err);
+      // continue to next row (skip failed one)
     }
   }
 
-  // finalize
+  // finalize archive
   archive.finalize().catch((e) => console.error("archive finalize error", e));
 
   return new Response(Readable.toWeb(zipStream) as ReadableStream<Uint8Array>, {
@@ -135,4 +179,3 @@ export async function POST(req: Request) {
     },
   });
 }
-

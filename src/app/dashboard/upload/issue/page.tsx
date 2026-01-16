@@ -3,6 +3,7 @@ import path from "path";
 import DownloadZipButton from "../../../../components/DownloadZipButton";
 import EmailCertificatesButton from "../../../../components/EmailCertificatesButton";
 import Link from "next/link";
+import { readUploadRecord, Row } from "@/lib/uploads";
 
 export default async function IssuePage({
   searchParams,
@@ -28,15 +29,8 @@ export default async function IssuePage({
     );
   }
 
-  const UPLOADS_DIR = path.join(process.cwd(), "db", "uploads");
-  const filePath = path.join(UPLOADS_DIR, `${id}.json`);
-  let record: { data?: Record<string, string>[]; type?: string } | null = null;
-  try {
-    const txt = await fs.readFile(filePath, "utf8");
-    record = JSON.parse(txt);
-  } catch (err: unknown) {
-    record = null;
-  }
+  // replace manual fs.readFile logic with:
+    const record = (await readUploadRecord(id)) as { data: Row[]; type?: string } | null;
 
   if (!record) {
     return (

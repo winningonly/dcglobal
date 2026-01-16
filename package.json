@@ -12,10 +12,13 @@
     "add-user": "node scripts/create-user.js"
   },
   "dependencies": {
+    "@netlify/blobs": "^10.5.0",
+    "@supabase/supabase-js": "^2.78.0",
     "archiver": "^7.0.1",
     "better-sqlite3": "^8.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
     "lucide-react": "^0.562.0",
     "next": "^15.3.2",
     "nodemailer": "^7.0.12",
